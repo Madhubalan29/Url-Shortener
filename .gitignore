@@ -1,0 +1,34 @@
+# === Java / Maven ===
+target/
+*.class
+*.jar
+*.war
+*.log
+.mvn/wrapper/maven-wrapper.jar
+
+# === IDE ===
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+
+# === Node / Frontend ===
+node_modules/
+dist/
+.cache/
+
+# === Environment ===
+.env
+*.env.local
+
+# === Docker ===
+docker-data/
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini

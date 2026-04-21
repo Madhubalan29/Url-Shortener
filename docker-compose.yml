@@ -1,0 +1,141 @@
+
+services:
+  # ─── PostgreSQL ───────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: urlshortener-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-url_shortener}
+      POSTGRES_USER: ${POSTGRES_USER:-shortener}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shortener_secret_123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shortener} -d ${POSTGRES_DB:-url_shortener}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shortener-net
+
+  # ─── Redis ────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: urlshortener-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shortener-net
+
+  # ─── Kafka (KRaft — no Zookeeper) ────────────────────
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: urlshortener-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "url-shortener-kafka-cluster-01"
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - shortener-net
+
+  # ─── Shortener Service (Spring Boot) ─────────────────
+  shortener-service:
+    build:
+      context: ./shortener-service
+      dockerfile: Dockerfile
+    container_name: urlshortener-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-url_shortener}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-shortener}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-shortener_secret_123}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_BASE_URL: ${BASE_URL:-http://localhost}
+      APP_RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
+      APP_RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - shortener-net
+
+  # ─── Analytics Consumer ──────────────────────────────
+  analytics-consumer:
+    build:
+      context: ./analytics-consumer
+      dockerfile: Dockerfile
+    container_name: urlshortener-analytics
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-url_shortener}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-shortener}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-shortener_secret_123}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - shortener-net
+
+  # ─── Frontend (React + Vite) ─────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: urlshortener-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - shortener-net
+
+  # ─── Nginx (Reverse Proxy) ──────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: urlshortener-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - shortener-service
+      - frontend
+    networks:
+      - shortener-net
+
+volumes:
+  postgres_data:
+
+networks:
+  shortener-net:
+    driver: bridge

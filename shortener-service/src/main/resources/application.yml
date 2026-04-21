@@ -1,0 +1,77 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: shortener-service
+
+  # ─── PostgreSQL ──────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/url_shortener
+    username: shortener
+    password: shortener_secret_123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # ─── Flyway ─────────────────────────────────────────
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # ─── Redis ──────────────────────────────────────────
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+  # ─── Kafka ──────────────────────────────────────────
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: 1
+      retries: 3
+
+# ─── Application Config ──────────────────────────────
+app:
+  base-url: ${APP_BASE_URL:http://localhost}
+  short-code-length: 7
+  default-ttl-days: 365
+  rate-limit:
+    requests: ${APP_RATE_LIMIT_REQUESTS:100}
+    window-seconds: ${APP_RATE_LIMIT_WINDOW_SECONDS:60}
+  kafka:
+    click-topic: url-clicks
+
+# ─── OpenAPI / Swagger ────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api/docs
+  swagger-ui:
+    path: /api/swagger-ui
+    enabled: true
+
+# ─── Logging ──────────────────────────────────────────
+logging:
+  level:
+    com.urlshortener: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
