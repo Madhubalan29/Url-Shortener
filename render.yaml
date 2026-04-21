@@ -19,14 +19,14 @@ services:
         sync: false
       - key: SPRING_DATA_REDIS_PASSWORD
         sync: false
-      - key: SPRING_DATA_REDIS_SSL
+      - key: SPRING_DATA_REDIS_SSL_ENABLED
         value: "true"
       - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
         sync: false
       - key: SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL
         value: "SASL_SSL"
       - key: SPRING_KAFKA_PROPERTIES_SASL_MECHANISM
-        value: "SCRAM-SHA-256"
+        value: "PLAIN"
       - key: SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG
         sync: false
       - key: APP_BASE_URL
@@ -51,6 +51,6 @@ services:
       - key: SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL
         value: "SASL_SSL"
       - key: SPRING_KAFKA_PROPERTIES_SASL_MECHANISM
-        value: "SCRAM-SHA-256"
+        value: "PLAIN"
       - key: SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG
         sync: false
