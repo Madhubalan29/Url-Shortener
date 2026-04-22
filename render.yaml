@@ -30,7 +30,7 @@ services:
       - key: SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG
         sync: false
       - key: APP_BASE_URL
-        sync: false
+        value: "https://url-shortener-api-x6xn.onrender.com"
 
   - type: web
     name: url-shortener-analytics
