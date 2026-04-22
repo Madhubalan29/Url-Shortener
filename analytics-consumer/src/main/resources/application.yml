@@ -54,3 +54,13 @@ logging:
     org.apache.kafka: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# ─── Actuator ─────────────────────────────────────────
+management:
+  health:
+    db:
+      enabled: false
+    kafka:
+      enabled: false
+    redis:
+      enabled: false
