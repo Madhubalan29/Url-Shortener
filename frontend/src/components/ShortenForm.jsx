@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { shortenUrl } from '../services/api';
+import { shortenUrl, formatShortUrl } from '../services/api';
 
 export default function ShortenForm({ apiKey, onUrlCreated, onToast }) {
   const [longUrl, setLongUrl] = useState('');
@@ -33,9 +33,10 @@ export default function ShortenForm({ apiKey, onUrlCreated, onToast }) {
   };
 
   const handleCopy = async () => {
-    if (!result?.shortUrl) return;
+    const displayUrl = formatShortUrl(result?.shortUrl);
+    if (!displayUrl) return;
     try {
-      await navigator.clipboard.writeText(result.shortUrl);
+      await navigator.clipboard.writeText(displayUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -99,8 +100,8 @@ export default function ShortenForm({ apiKey, onUrlCreated, onToast }) {
           <div className="result-card">
             <div className="result-label">Your shortened URL</div>
             <div className="result-url">
-              <a href={result.shortUrl} target="_blank" rel="noopener noreferrer">
-                {result.shortUrl}
+              <a href={formatShortUrl(result.shortUrl)} target="_blank" rel="noopener noreferrer">
+                {formatShortUrl(result.shortUrl)}
               </a>
               <button
                 type="button"

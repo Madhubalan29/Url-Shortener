@@ -1,8 +1,30 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/api/v1` 
-  : '/api/v1';
+const getApiBase = () => {
+  const url = import.meta.env.VITE_API_URL;
+  if (!url) return '/api/v1';
+  return url.endsWith('/') ? `${url}api/v1` : `${url}/api/v1`;
+};
+
+const API_BASE = getApiBase();
+
+/**
+ * Utility to fix short URLs if the backend returns localhost but we know the actual API URL.
+ */
+export const formatShortUrl = (shortUrl) => {
+  if (!shortUrl) return '';
+  const url = import.meta.env.VITE_API_URL;
+  if (!url) return shortUrl;
+  
+  // If the URL contains localhost, replace it with the configured VITE_API_URL
+  if (shortUrl.includes('localhost')) {
+    const parts = shortUrl.split('/');
+    const shortCode = parts[parts.length - 1];
+    const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+    return `${baseUrl}/${shortCode}`;
+  }
+  return shortUrl;
+};
 
 /**
  * Create an Axios instance with API key header injection.

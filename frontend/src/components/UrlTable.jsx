@@ -1,5 +1,5 @@
 import React from 'react';
-import { deleteUrl } from '../services/api';
+import { deleteUrl, formatShortUrl } from '../services/api';
 
 export default function UrlTable({ urls, apiKey, onRefresh, onSelectUrl, onToast }) {
   const formatDate = (isoString) => {
@@ -64,7 +64,7 @@ export default function UrlTable({ urls, apiKey, onRefresh, onSelectUrl, onToast
                 <td>
                   <a
                     className="short-code-link"
-                    href={url.shortUrl}
+                    href={formatShortUrl(url.shortUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
